@@ -3,7 +3,7 @@ pub mod error;
 mod format;
 mod parser;
 
-use format::Rgb;
+use format::{Hsl, Rgb};
 use itertools::Itertools;
 use std::error::Error;
 
@@ -38,7 +38,7 @@ impl Color {
     }
 
     fn convert_to_hsl(self) -> String {
-        todo!()
+        Hsl::from(Rgb::from(self)).to_string()
     }
 
     fn convert_to_hsv(self) -> String {

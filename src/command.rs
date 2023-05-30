@@ -23,6 +23,10 @@ impl Command {
     pub fn input(&self) -> String {
         self.input.concat()
     }
+
+    pub fn fmt(&self) -> Format {
+        self.fmt
+    }
 }
 
 #[derive(Clone, Copy, Debug, clap::ValueEnum)]

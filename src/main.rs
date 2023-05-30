@@ -9,7 +9,8 @@ fn main() {
 
     match res {
         Ok(col) => {
-            dbg!(col);
+            let output = col.convert(cfg.fmt());
+            println!("{output}");
         }
         Err(errs) => errs.into_iter().for_each(|err| pretty_print(&input, err)),
     };

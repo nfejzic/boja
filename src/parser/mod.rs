@@ -1,27 +1,23 @@
 //! Implementation of the parser for various color formats.
 
-use crate::error::CustomError;
+mod utils;
+
 use crate::Color;
+use crate::{error::CustomError, format::Hsl};
 use chumsky::{
-    primitive::{choice, end, filter, just},
-    text::whitespace,
+    primitive::{choice, end, just},
     Parser,
 };
 
+use self::utils::{digit, n_digits, numbers_separated_by, prefix};
+
 pub fn parse_color(input: &str) -> Result<Color, Vec<CustomError>> {
-    let parser = choice((parse_hex(), parse_rgb()));
+    let parser = choice((parse_hex(), parse_rgb(), parse_hsl()));
     parser.parse(input)
 }
 
 fn parse_hex() -> impl Parser<char, Color, Error = CustomError> {
-    let hex_digit =
-        filter(|input: &char| input.is_ascii_hexdigit()).map_err(|err: CustomError| CustomError {
-            msg: String::from("Unexpected input. Expected"),
-            span: err.span,
-            expected: vec![String::from("a hexadecimal digit")],
-            found: err.found,
-        });
-
+    let hex_digit = digit(16);
     let three_hex = hex_digit.repeated().exactly(3).then_ignore(end());
     let six_hex = hex_digit.repeated().exactly(6).then_ignore(end());
 
@@ -37,48 +33,10 @@ fn parse_hex() -> impl Parser<char, Color, Error = CustomError> {
 }
 
 fn parse_rgb() -> impl Parser<char, Color, Error = CustomError> {
-    let prefix = filter(|input: &char| input.is_alphabetic())
-        .repeated()
-        .exactly(3)
-        .map(|input| input.iter().collect::<String>())
-        .then(just("("))
-        .try_map(|(rgb, parenth), span| {
-            if &rgb.to_lowercase() != "rgb" && parenth != "(" {
-                Err(CustomError {
-                    msg: String::from("Unexpected input. Expected"),
-                    span,
-                    expected: vec![String::from("rgb(")],
-                    found: vec![rgb, parenth.to_string()],
-                })
-            } else {
-                Ok(rgb)
-            }
-        });
-
-    let digit = filter(|input: &char| input.is_ascii_digit());
-    let single_val = digit
-        .repeated()
-        .at_least(1)
-        .at_most(3)
-        .map(|input| input.iter().collect::<String>());
-
-    let parser = prefix
-        .ignore_then(
-            single_val
-                .then_ignore(just(','))
-                .then_ignore(whitespace())
-                .repeated()
-                .exactly(2),
-        )
-        .then(single_val)
-        .then_ignore(just(")"))
-        .map(|(mut rg, b)| {
-            rg.push(b);
-            rg
-        })
-        .then_ignore(end());
-
-    parser
+    prefix("rgb")
+        .ignore_then(numbers_separated_by(n_digits(3, 10), 3, ','))
+        .then_ignore(just(')'))
+        .then_ignore(end())
         .map(|rgb| Color::try_from(&rgb[..]))
         .try_map(|res: Result<Color, _>, span| match res {
             Ok(color) => Ok(color),
@@ -89,4 +47,22 @@ fn parse_rgb() -> impl Parser<char, Color, Error = CustomError> {
                 found: vec![err.to_string()],
             }),
         })
+}
+
+fn parse_hsl() -> impl Parser<char, Color, Error = CustomError> {
+    prefix("hsl")
+        .ignore_then(numbers_separated_by(n_digits(3, 10), 3, ','))
+        .then_ignore(just(')'))
+        .then_ignore(end())
+        .try_map(|hsl, span| {
+            Hsl::try_from(&hsl[..]).map_err(|err| CustomError {
+                msg: String::from("Invalid HSL value. Expected"),
+                span,
+                expected: vec![String::from(
+                    "Values: 0-360 for hue, 0-100 for saturation and lightness",
+                )],
+                found: vec![err.to_string()],
+            })
+        })
+        .map(Color::from)
 }
