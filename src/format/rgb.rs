@@ -1,4 +1,4 @@
-use super::hsl::Hsl;
+use super::{hsl::Hsl, hsv::Hsv};
 use crate::Color;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -63,12 +63,43 @@ impl From<Hsl> for Rgb {
     }
 }
 
-impl From<Rgb> for Color {
-    fn from(rgb: Rgb) -> Self {
+impl From<Hsv> for Rgb {
+    fn from(value: Hsv) -> Self {
+        let (h, s, v) = value.into_tuple();
+
+        debug_assert!((0..=360).contains(&h));
+        debug_assert!((0..=100).contains(&s));
+        debug_assert!((0..=100).contains(&v));
+
+        let s = s as f64 / 100f64;
+        let v = v as f64 / 100f64;
+
+        let c: f64 = v * s;
+        let x = c * (1.0 - ((h as f64 / 60f64) % 2f64 - 1f64).abs());
+        let m = v - c;
+
+        let (r1, g1, b1) = match h % 360 {
+            0..=59 => (c, x, 0.0),
+            60..=119 => (x, c, 0.0),
+            120..=179 => (0.0, c, x),
+            180..=239 => (0.0, x, c),
+            240..=299 => (x, 0.0, c),
+            300..=359 => (c, 0.0, x),
+            360.. => unreachable!("hsl hue value must be between 0 and 360"),
+        };
+
+        let red = ((r1 + m) * 255.0).round() as i64;
+        let green = ((g1 + m) * 255.0).round() as i64;
+        let blue = ((b1 + m) * 255.0).round() as i64;
+
+        debug_assert!(u8::try_from(red).is_ok());
+        debug_assert!(u8::try_from(green).is_ok());
+        debug_assert!(u8::try_from(blue).is_ok());
+
         Self {
-            red: rgb.red,
-            green: rgb.green,
-            blue: rgb.blue,
+            red: red as u8,
+            green: green as u8,
+            blue: blue as u8,
         }
     }
 }

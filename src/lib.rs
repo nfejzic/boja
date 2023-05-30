@@ -3,7 +3,7 @@ pub mod error;
 mod format;
 mod parser;
 
-use format::{Hsl, Rgb};
+use format::{Hsl, Hsv, Rgb};
 use itertools::Itertools;
 use std::error::Error;
 
@@ -42,7 +42,7 @@ impl Color {
     }
 
     fn convert_to_hsv(self) -> String {
-        todo!()
+        Hsv::from(Rgb::from(self)).to_string()
     }
 
     fn convert_to_cmyk(self) -> String {
@@ -115,5 +115,13 @@ impl TryFrom<&[String]> for Color {
             .ok_or(anyhow::anyhow!("Bad input: {:?}", value))?;
 
         Color::try_from(&[red, green, blue][..])
+    }
+}
+
+impl From<Rgb> for Color {
+    fn from(rgb: Rgb) -> Self {
+        let (red, green, blue) = rgb.into_tuple();
+
+        Self { red, green, blue }
     }
 }

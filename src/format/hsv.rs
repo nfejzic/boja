@@ -3,13 +3,13 @@ use crate::Color;
 use super::Rgb;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-pub(crate) struct Hsl {
+pub(crate) struct Hsv {
     hue: u16,
     saturation: u8,
-    lightness: u8,
+    value: u8,
 }
 
-impl From<Rgb> for Hsl {
+impl From<Rgb> for Hsv {
     fn from(rgb: Rgb) -> Self {
         let (red, green, blue) = rgb.into_tuple();
 
@@ -21,7 +21,7 @@ impl From<Rgb> for Hsl {
         let c_min = rp.min(gp).min(bp);
         let delta = c_max - c_min;
 
-        let lightness = (c_max + c_min) / 2.0;
+        let value = c_max;
 
         let hue = if delta == 0f64 {
             0.0
@@ -35,38 +35,33 @@ impl From<Rgb> for Hsl {
         };
 
         let hue = if hue < 0.0 { 360.0 - hue.abs() } else { hue };
-
-        let saturation = if delta == 0f64 {
-            0.0
-        } else {
-            delta / (1.0 - (2.0 * lightness - 1.0).abs())
-        };
+        let saturation = if delta == 0f64 { 0.0 } else { delta / c_max };
 
         Self {
             hue: hue.round() as u16,
             saturation: (saturation * 100.0).round() as u8,
-            lightness: (lightness * 100.0).round() as u8,
+            value: (value * 100.0).round() as u8,
         }
     }
 }
 
-impl From<Hsl> for Color {
-    fn from(hsl: Hsl) -> Self {
-        Color::from(Rgb::from(hsl))
+impl From<Hsv> for Color {
+    fn from(hsv: Hsv) -> Self {
+        Color::from(Rgb::from(hsv))
     }
 }
 
-impl From<(u16, u8, u8)> for Hsl {
-    fn from((hue, saturation, lightness): (u16, u8, u8)) -> Self {
+impl From<(u16, u8, u8)> for Hsv {
+    fn from((hue, saturation, value): (u16, u8, u8)) -> Self {
         Self {
             hue,
             saturation,
-            lightness,
+            value,
         }
     }
 }
 
-impl TryFrom<&[String]> for Hsl {
+impl TryFrom<&[String]> for Hsv {
     type Error = anyhow::Error;
 
     fn try_from(value: &[String]) -> Result<Self, Self::Error> {
@@ -85,53 +80,53 @@ impl TryFrom<&[String]> for Hsl {
             anyhow::bail!("Saturation must be in range 0..100");
         }
 
-        let lightness = value
+        let value = value
             .get(2)
-            .ok_or(anyhow::anyhow!("Expected value for lightness"))?
+            .ok_or(anyhow::anyhow!("Expected value for value"))?
             .parse::<u8>()?;
 
-        if lightness > 100 {
-            anyhow::bail!("Lightness must be in range 0..100");
+        if value > 100 {
+            anyhow::bail!("Value must be in range 0..100");
         }
 
-        Ok(Hsl {
+        Ok(Hsv {
             hue,
             saturation,
-            lightness,
+            value,
         })
     }
 }
 
-impl std::fmt::Display for Hsl {
+impl std::fmt::Display for Hsv {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_fmt(format_args!(
-            "hsl({}, {}, {})",
-            self.hue, self.saturation, self.lightness
+            "hsv({}, {}, {})",
+            self.hue, self.saturation, self.value
         ))
     }
 }
 
-impl Hsl {
+impl Hsv {
     pub fn into_tuple(self) -> (u16, u8, u8) {
-        (self.hue, self.saturation, self.lightness)
+        (self.hue, self.saturation, self.value)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::format::{hsl::Hsl, Rgb};
+    use crate::format::{hsv::Hsv, Rgb};
 
     #[test]
     fn black_from_rgb() {
         let black = Rgb::from((0, 0, 0));
 
-        let hsl = Hsl::from(black);
+        let hsv = Hsv::from(black);
         assert_eq!(
-            hsl,
-            Hsl {
+            hsv,
+            Hsv {
                 hue: 0,
                 saturation: 0,
-                lightness: 0
+                value: 0
             }
         );
     }
@@ -140,13 +135,13 @@ mod tests {
     fn white_from_rgb() {
         let black = Rgb::from((255, 255, 255));
 
-        let hsl = Hsl::from(black);
+        let hsv = Hsv::from(black);
         assert_eq!(
-            hsl,
-            Hsl {
+            hsv,
+            Hsv {
                 hue: 0,
                 saturation: 0,
-                lightness: 100
+                value: 100
             }
         );
     }
@@ -155,13 +150,13 @@ mod tests {
     fn red_from_rgb() {
         let black = Rgb::from((255, 0, 0));
 
-        let hsl = Hsl::from(black);
+        let hsv = Hsv::from(black);
         assert_eq!(
-            hsl,
-            Hsl {
+            hsv,
+            Hsv {
                 hue: 0,
                 saturation: 100,
-                lightness: 50
+                value: 100
             }
         );
     }
@@ -170,13 +165,13 @@ mod tests {
     fn olive_from_rgb() {
         let black = Rgb::from((128, 128, 0));
 
-        let hsl = Hsl::from(black);
+        let hsv = Hsv::from(black);
         assert_eq!(
-            hsl,
-            Hsl {
+            hsv,
+            Hsv {
                 hue: 60,
                 saturation: 100,
-                lightness: 25
+                value: 50
             }
         );
     }

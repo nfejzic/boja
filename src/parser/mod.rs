@@ -2,6 +2,7 @@
 
 mod utils;
 
+use crate::format::Hsv;
 use crate::Color;
 use crate::{error::CustomError, format::Hsl};
 use chumsky::{
@@ -12,7 +13,7 @@ use chumsky::{
 use self::utils::{digit, n_digits, numbers_separated_by, prefix};
 
 pub fn parse_color(input: &str) -> Result<Color, Vec<CustomError>> {
-    let parser = choice((parse_hex(), parse_rgb(), parse_hsl()));
+    let parser = choice((parse_hex(), parse_rgb(), parse_hsl(), parse_hsv()));
     parser.parse(input)
 }
 
@@ -60,6 +61,24 @@ fn parse_hsl() -> impl Parser<char, Color, Error = CustomError> {
                 span,
                 expected: vec![String::from(
                     "Values: 0-360 for hue, 0-100 for saturation and lightness",
+                )],
+                found: vec![err.to_string()],
+            })
+        })
+        .map(Color::from)
+}
+
+fn parse_hsv() -> impl Parser<char, Color, Error = CustomError> {
+    prefix("hsv")
+        .ignore_then(numbers_separated_by(n_digits(3, 10), 3, ','))
+        .then_ignore(just(')'))
+        .then_ignore(end())
+        .try_map(|hsv, span| {
+            Hsv::try_from(&hsv[..]).map_err(|err| CustomError {
+                msg: String::from("Invalid HSV value. Expected"),
+                span,
+                expected: vec![String::from(
+                    "Values: 0-360 for hue, 0-100 for saturation and value",
                 )],
                 found: vec![err.to_string()],
             })
