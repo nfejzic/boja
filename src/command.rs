@@ -30,15 +30,15 @@ pub enum Format {
     #[value(help = "Hexadecimal representation of RGB color. Example for white: ffffff")]
     Hex,
 
-    #[value(help = "RGB representation of color. Example for white: 255, 255, 255")]
+    #[value(help = "RGB representation of color. Example for white: rgb(255, 255, 255)")]
     Rgb,
 
-    #[value(help = "HSL representation of color. Example for white 0, 0, 100")]
+    #[value(help = "HSL representation of color. Example for white hsl(0, 0, 100)")]
     Hsl,
 
-    #[value(help = "HSV representation of color. Example for white: 0, 0, 100")]
+    #[value(help = "HSV representation of color. Example for white: hsv(0, 0, 100)")]
     Hsv,
 
-    #[value(help = "CMYK representation of color. Example for white: 0, 0, 0, 0")]
+    #[value(help = "CMYK representation of color. Example for white: cmyk(0, 0, 0, 0)")]
     Cmyk,
 }
