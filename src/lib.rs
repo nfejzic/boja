@@ -1,13 +1,13 @@
 mod command;
+pub mod error;
 mod format;
 mod parser;
 
+use format::Rgb;
+use itertools::Itertools;
 use std::error::Error;
 
 pub use command::*;
-use format::Rgb;
-
-use itertools::Itertools;
 pub use parser::parse_color;
 
 /// Internal color representation.

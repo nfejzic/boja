@@ -1,5 +1,3 @@
-use std::fmt::Display;
-
 use crate::Color;
 
 pub(crate) struct Rgb {

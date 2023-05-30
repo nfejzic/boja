@@ -1,6 +1,5 @@
 use ariadne::{sources, Label, Report, ReportKind};
-use boja::Command;
-use chumsky::prelude::Simple;
+use boja::{error::CustomError, Command};
 
 fn main() {
     let cfg = Command::init();
@@ -16,12 +15,12 @@ fn main() {
     };
 }
 
-fn pretty_print(input: &str, error: Simple<char>) {
+fn pretty_print(input: &str, error: CustomError) {
     let msg = error.to_string();
 
-    Report::<(&str, _)>::build(ReportKind::Error, "stdin", error.span().start)
-        .with_message(error.label().unwrap_or("Unexpected input"))
-        .with_label(Label::new(("stdin", error.span())).with_message(msg))
+    Report::<(&str, _)>::build(ReportKind::Error, "stdin", error.span.start)
+        .with_message(error.msg)
+        .with_label(Label::new(("stdin", error.span)).with_message(msg))
         .with_help("run 'boja --help' for usage instructions")
         .finish()
         .eprint(sources([("stdin", input)]))
