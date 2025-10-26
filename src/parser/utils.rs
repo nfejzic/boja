@@ -47,7 +47,7 @@ where
     P: Parser<char, String, Error = CustomError>,
     P: Copy,
 {
-    n_digits(3, 10)
+    digits_parser
         .then_ignore(just(separator))
         .then_ignore(whitespace())
         .repeated()

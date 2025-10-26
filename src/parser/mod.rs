@@ -51,8 +51,11 @@ fn parse_rgb() -> impl Parser<char, Color, Error = CustomError> {
 }
 
 fn parse_hsl() -> impl Parser<char, Color, Error = CustomError> {
+    let digits = n_digits(3, 10);
+    let digits_maybe_percent = choice((digits.then_ignore(just('%')), digits));
+
     prefix("hsl")
-        .ignore_then(numbers_separated_by(n_digits(3, 10), 3, ','))
+        .ignore_then(numbers_separated_by(digits_maybe_percent, 3, ','))
         .then_ignore(just(')'))
         .then_ignore(end())
         .try_map(|hsl, span| {
